@@ -85,7 +85,7 @@ See [EXCEL_POWER_AUTOMATE_SETUP.md](EXCEL_POWER_AUTOMATE_SETUP.md) for the exact
 
 ```powershell
 uv sync
-uv run gdacs-events-scraper
+uv run python -m gdacs_events_scraper
 ```
 
 ## Docker run
