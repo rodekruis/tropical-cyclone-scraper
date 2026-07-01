@@ -1,0 +1,1 @@
+"""GDACS events scraper package."""

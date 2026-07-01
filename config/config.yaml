@@ -1,0 +1,9 @@
+gdacs_api_url: https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH
+lookback_days: 1
+lookahead_days: 7
+min_alert_level: Green  # Green, Orange, Red
+
+country_configs:
+  - iso3: PHL
+    event_types:
+      - TC
