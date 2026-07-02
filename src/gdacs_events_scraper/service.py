@@ -78,13 +78,18 @@ def normalize_countries(raw: Any) -> list[str]:
     if isinstance(raw, list):
         for item in raw:
             if isinstance(item, str):
-                countries.append(item.strip())
+                if (iso3 := normalize_iso3(item)):
+                    countries.append(iso3)
             elif isinstance(item, dict):
-                candidate = item.get("iso3") or item.get("name") or item.get("country")
-                if isinstance(candidate, str):
-                    countries.append(candidate.strip())
+                candidate = item.get("iso3")
+                if isinstance(candidate, str) and (iso3 := normalize_iso3(candidate)):
+                    countries.append(iso3)
     elif isinstance(raw, str):
-        countries = [part.strip() for part in raw.replace(";", ",").split(",") if part.strip()]
+        countries = [
+            iso3
+            for part in raw.replace(";", ",").split(",")
+            if (iso3 := normalize_iso3(part))
+        ]
 
     return [country for country in countries if country]
 
@@ -177,12 +182,16 @@ def to_summary(raw_event: dict[str, Any]) -> EventSummary | None:
     if not event_id or not event_name:
         return None
 
-    countries = normalize_countries(
-        raw_event.get("countries")
-        or raw_event.get("exposedcountries")
-        or raw_event.get("affectedcountries")
-        or raw_event.get("country")
-    )
+    country_sources = [
+        raw_event.get("countries"),
+        raw_event.get("exposedcountries"),
+        raw_event.get("affectedcountries"),
+        raw_event.get("iso3"),
+    ]
+    countries: list[str] = []
+    for source in country_sources:
+        countries.extend(normalize_countries(source))
+    countries = list(dict.fromkeys(country for country in countries if country))
 
     start_time = parse_dt(
         raw_event.get("fromdate")
