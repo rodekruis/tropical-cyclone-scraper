@@ -120,6 +120,36 @@ def test_to_summary_returns_earthquake_summary_for_eq_event() -> None:
     assert summary.event_id == "eq-1"
 
 
+def test_filter_events_uses_top_level_iso3_when_country_is_name() -> None:
+    now = datetime.now(UTC)
+    in_window_start = (now - timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    in_window_end = (now + timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    raw_events = [
+        {
+            "eventid": "1001279",
+            "eventtype": "TC",
+            "name": "Tropical Cyclone BAVI-26",
+            "fromdate": in_window_start,
+            "todate": in_window_end,
+            "country": "Northern Mariana Islands",
+            "affectedcountries": [],
+            "iso3": "MNP",
+            "alertlevel": "Red",
+        }
+    ]
+
+    result = filter_events(
+        raw_events,
+        lookback_days=1,
+        lookahead_days=7,
+        monitored_country_event_types={"MNP": ["TC"]},
+    )
+
+    assert [event.event_id for event in result] == ["1001279"]
+    assert result[0].countries == ["MNP"]
+
+
 def test_alert_level_meets_minimum_treats_threshold_as_inclusive() -> None:
     assert alert_level_meets_minimum("Green", "Green") is True
     assert alert_level_meets_minimum("Orange", "Green") is True
