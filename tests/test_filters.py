@@ -120,7 +120,7 @@ def test_to_summary_returns_earthquake_summary_for_eq_event() -> None:
     assert summary.event_id == "eq-1"
 
 
-def test_filter_events_uses_top_level_iso3_when_country_is_name() -> None:
+def test_filter_events_ignores_top_level_iso3_when_affectedcountries_missing() -> None:
     now = datetime.now(UTC)
     in_window_start = (now - timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M:%SZ")
     in_window_end = (now + timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -135,6 +135,35 @@ def test_filter_events_uses_top_level_iso3_when_country_is_name() -> None:
             "country": "Northern Mariana Islands",
             "affectedcountries": [],
             "iso3": "MNP",
+            "alertlevel": "Red",
+        }
+    ]
+
+    result = filter_events(
+        raw_events,
+        lookback_days=1,
+        lookahead_days=7,
+        monitored_country_event_types={"MNP": ["TC"]},
+    )
+
+    assert result == []
+
+
+def test_filter_events_uses_affectedcountries_iso3() -> None:
+    now = datetime.now(UTC)
+    in_window_start = (now - timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    in_window_end = (now + timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    raw_events = [
+        {
+            "eventid": "1001279",
+            "eventtype": "TC",
+            "name": "Tropical Cyclone BAVI-26",
+            "fromdate": in_window_start,
+            "todate": in_window_end,
+            "country": "Northern Mariana Islands",
+            "affectedcountries": [{"iso3": "MNP"}],
+            "iso3": "PHL",
             "alertlevel": "Red",
         }
     ]
@@ -174,21 +203,21 @@ def test_filter_cyclones_applies_lookback_and_lookahead_window() -> None:
             "name": "TC A",
             "fromdate": in_lookback_start,
             "todate": in_lookback_end,
-            "countries": ["PHL"],
+            "affectedcountries": [{"iso3": "PHL"}],
         },
         {
             "eventid": "tc-b",
             "name": "TC B",
             "fromdate": in_lookahead_start,
             "todate": in_lookahead_end,
-            "countries": ["PHL"],
+            "affectedcountries": [{"iso3": "PHL"}],
         },
         {
             "eventid": "tc-c",
             "name": "TC C",
             "fromdate": out_of_window_start,
             "todate": out_of_window_end,
-            "countries": ["PHL"],
+            "affectedcountries": [{"iso3": "PHL"}],
         },
     ]
 
@@ -209,7 +238,7 @@ def test_filter_events_includes_earthquake_and_cyclone_matches() -> None:
             "name": "EQ A",
             "fromdate": in_window_start,
             "todate": in_window_end,
-            "countries": ["PHL"],
+            "affectedcountries": [{"iso3": "PHL"}],
         },
         {
             "eventid": "tc-a",
@@ -217,7 +246,7 @@ def test_filter_events_includes_earthquake_and_cyclone_matches() -> None:
             "name": "TC A",
             "fromdate": in_window_start,
             "todate": in_window_end,
-            "countries": ["PHL"],
+            "affectedcountries": [{"iso3": "PHL"}],
         },
     ]
 
@@ -245,7 +274,7 @@ def test_filter_events_applies_minimum_alert_level_threshold() -> None:
             "name": "TC GREEN",
             "fromdate": in_window_start,
             "todate": in_window_end,
-            "countries": ["PHL"],
+            "affectedcountries": [{"iso3": "PHL"}],
             "alertlevel": "Green",
         },
         {
@@ -254,7 +283,7 @@ def test_filter_events_applies_minimum_alert_level_threshold() -> None:
             "name": "TC ORANGE",
             "fromdate": in_window_start,
             "todate": in_window_end,
-            "countries": ["PHL"],
+            "affectedcountries": [{"iso3": "PHL"}],
             "alertlevel": "Orange",
         },
         {
@@ -263,7 +292,7 @@ def test_filter_events_applies_minimum_alert_level_threshold() -> None:
             "name": "TC RED",
             "fromdate": in_window_start,
             "todate": in_window_end,
-            "countries": ["PHL"],
+            "affectedcountries": [{"iso3": "PHL"}],
             "alertlevel": "Red",
         },
     ]
@@ -291,7 +320,7 @@ def test_filter_events_applies_country_event_mapping() -> None:
             "name": "EQ PHL",
             "fromdate": in_window_start,
             "todate": in_window_end,
-            "countries": [{"iso3": "PHL"}],
+            "affectedcountries": [{"iso3": "PHL"}],
         },
         {
             "eventid": "tc-idn",
@@ -299,7 +328,7 @@ def test_filter_events_applies_country_event_mapping() -> None:
             "name": "TC IDN",
             "fromdate": in_window_start,
             "todate": in_window_end,
-            "countries": [{"iso3": "IDN"}],
+            "affectedcountries": [{"iso3": "IDN"}],
         },
         {
             "eventid": "eq-idn",
@@ -307,7 +336,7 @@ def test_filter_events_applies_country_event_mapping() -> None:
             "name": "EQ IDN",
             "fromdate": in_window_start,
             "todate": in_window_end,
-            "countries": [{"iso3": "IDN"}],
+            "affectedcountries": [{"iso3": "IDN"}],
         },
     ]
 
