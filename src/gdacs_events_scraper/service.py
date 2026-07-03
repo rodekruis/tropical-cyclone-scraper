@@ -81,9 +81,11 @@ def normalize_countries(raw: Any) -> list[str]:
                 if (iso3 := normalize_iso3(item)):
                     countries.append(iso3)
             elif isinstance(item, dict):
-                candidate = item.get("iso3")
-                if isinstance(candidate, str) and (iso3 := normalize_iso3(candidate)):
-                    countries.append(iso3)
+                for key in ("iso3", "countryiso3", "countryCode", "country_code"):
+                    candidate = item.get(key)
+                    if isinstance(candidate, str) and (iso3 := normalize_iso3(candidate)):
+                        countries.append(iso3)
+                        break
     elif isinstance(raw, str):
         countries = [
             iso3
@@ -183,28 +185,15 @@ def to_summary(raw_event: dict[str, Any]) -> EventSummary | None:
         return None
 
     country_sources = [
-        raw_event.get("countries"),
-        raw_event.get("exposedcountries"),
         raw_event.get("affectedcountries"),
-        raw_event.get("iso3"),
     ]
     countries: list[str] = []
     for source in country_sources:
         countries.extend(normalize_countries(source))
     countries = list(dict.fromkeys(country for country in countries if country))
 
-    start_time = parse_dt(
-        raw_event.get("fromdate")
-        or raw_event.get("startdate")
-        or raw_event.get("startDate")
-        or raw_event.get("begindate")
-    )
-    end_time = parse_dt(
-        raw_event.get("todate")
-        or raw_event.get("enddate")
-        or raw_event.get("endDate")
-        or raw_event.get("expiredate")
-    )
+    start_time = parse_dt(raw_event.get("fromdate"))
+    end_time = parse_dt(raw_event.get("todate"))
 
     summary_class = EarthquakeSummary if normalize_event_type(raw_event) == "EQ" else CycloneSummary
     return summary_class(
